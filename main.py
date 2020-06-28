@@ -130,7 +130,8 @@ def checkProfit(par,timeframe):
 	profit_Binary  = API.get_all_profit()
 	profit_Digital = Payout(par, timeframe)
 
-	profit_Binary_Real  = profit_Binary[par]["turbo"]
+	profit_Binary_Real  = round(profit_Binary[par]["turbo"],2)
+	profit_Digital = round(profit_Digital,2)
 
 	if profit_Binary_Real <  profit_Digital :
 		return "digital"
@@ -186,6 +187,8 @@ for x in sinais:
 		# print(c)
 		if minutos_lista < minutos:
 			break
+			
+		opcao = checkProfit(par,5)
 
 		entrar = True if (minutos_lista == minutos ) else False
 		# print('Hora de entrar?',entrar,'/ Minutos:',minutos)
@@ -197,9 +200,7 @@ for x in sinais:
 			dir = direcao
 
 			if dir:
-				opcao = checkProfit(par,5)
 				print('Paridade',par,'opcao:',opcao,'/','Horario:',minutos_lista,'/','Direção:',dir)
-				
 				valor_entrada = valor_entrada_b
 				resultado,lucro,stop = entradas(par,valor_entrada, dir,config,opcao)
 				print('   -> ',resultado,'/',lucro,'\n\n')
@@ -230,6 +231,8 @@ for x in sinais:
 						else:
 							valor_entrada = Martingale(float(valor_entrada))	
 					break	
+				else:
+					break
 		time.sleep(0.1)
 	# break
 print('lista de sinais finalizada')
