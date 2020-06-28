@@ -31,14 +31,13 @@ def Martingale(valor):
 
 def Payout(par,timeframe):
 	API.subscribe_strike_list(par, timeframe)
-	for i in range(0,2):
+	while True:
 		d = API.get_digital_current_profit(par, timeframe)
+		if d > 0:
+			break
 		time.sleep(1)
 	API.unsubscribe_strike_list(par, timeframe)
-	if d != False:
-		return float(d / 100)
-	else:
-		return 0
+	return float(d / 100)
 
 def banca():
 	return API.get_balance()
@@ -127,24 +126,31 @@ def timestamp_converter():
 	# return str(hora.astimezone(tz.gettz('America/Sao Paulo')))[:-6] if retorno == 1 else hora.astimezone(tz.gettz('America/Sao Paulo'))
 
 def checkProfit(par,timeframe):
-	profit_Binary  = API.get_all_profit()
-	profit_Digital = Payout(par, timeframe)
+	all_asset =  API.get_all_open_time()
+	profit  = API.get_all_profit()
 
-	profit_Binary_Real  = round(profit_Binary[par]["turbo"],2)
-	profit_Digital = round(profit_Digital,2)
+	digital = 0
+	binaria = 0
 
-	if profit_Binary_Real <  profit_Digital :
+	if all_asset['digital'][par]['open']:
+		digital = Payout(par,timeframe)
+		digital  = round(digital,2)
+
+	if all_asset['turbo'][par]['open']:
+		binaria  = round(profit[par]["turbo"],2)
+
+	if binaria <  digital :
 		return "digital"
 
-	elif profit_Digital < profit_Binary_Real :
+	elif digital < binaria :
 		return "binaria"
 
-	elif profit_Digital == profit_Binary_Real :
+	elif digital == binaria :
 		return "digital"
 
 	else :
 		"erro"
-
+	
 API = IQ_Option('','')
 API.connect()
 

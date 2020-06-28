@@ -1,2 +1,2 @@
-M5;gbpusd-otc;18:05:00;CALL
-M5;gbpusd-otc;18:11:00;CALL
+M5;audcad-otc;19:10:00;CALL
+M5;gbpusd-otc;19:09:00;CALL
