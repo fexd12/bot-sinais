@@ -1,22 +1,11 @@
-#pip install git+https://github.com/fexd12/iqoptionapi.git --user
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
-import time, json, logging, configparser
 from dateutil import tz
-import sys
+
+import time, json, logging, configparser,sys,telegram
 
 logging.disable(level=(logging.DEBUG))
 
-
-def stop(lucro, gain, loss):
-	print('lucro',lucro)
-	if lucro <= float('-' + str(abs(loss))):
-		print('Stop Loss batido!')
-		sys.exit()
-		
-	if lucro >= float(abs(gain)):
-		print('Stop Gain Batido!')
-		sys.exit()
 
 def Martingale(valor):
 	lucro_esperado = float(valor) * 1.5 # gale para recuperacao = 1.5 , gale para cobertura = 2.3
@@ -46,7 +35,7 @@ def configuracao():
 	arquivo = configparser.RawConfigParser()
 	arquivo.read('config.txt')	
 		
-	return {'stop_win': arquivo.get('GERAL', 'stop_win'),'stop_loss': arquivo.get('GERAL', 'stop_loss'), 'payout': 0, 'banca_inicial': banca(), 'martingale': arquivo.get('GERAL', 'martingale'), 'sorosgale': arquivo.get('GERAL', 'sorosgale'), 'niveis': arquivo.get('GERAL', 'niveis')}
+	return {'stop_win': arquivo.get('GERAL', 'stop_win'),'stop_loss': arquivo.get('GERAL', 'stop_loss'), 'payout': 0, 'banca_inicial': banca(), 'martingale': arquivo.get('GERAL', 'martingale'), 'sorosgale': arquivo.get('GERAL', 'sorosgale'), 'niveis': arquivo.get('GERAL', 'niveis'),'telegram_token':arquivo.get('telegram','telegram_token'),'telegram_id':arquivo.get('telegram','telegram_id'),'usar_bot':arquivo.get('telegram','usar_bot')}
 
 def carregaSinais():
 	x = open('sinais.txt')
@@ -141,6 +130,11 @@ def Timeframe(timeframe):
 	else:
 		return 'erro'
 
+def Mensagem(mensagem):
+	print(mensagem)
+	if VERIFICA_BOT == 'S':
+		bot.sendMessage(chat_id = TELEGRAM_ID, text = mensagem)
+
 def checkProfit(par,timeframe):
 	all_asset =  API.get_all_open_time()
 	profit  = API.get_all_profit()
@@ -169,14 +163,22 @@ def checkProfit(par,timeframe):
 
 	else :
 		"erro"
-	
+
+
 API = IQ_Option('','')
 API.connect()
-
 API.change_balance('PRACTICE') # PRACTICE / REAL
+
+global VERIFICA_BOT,TELEGRAM_ID
 
 config = configuracao()
 config['banca_inicial'] = banca()
+
+VERIFICA_BOT = config['usar_bot']
+TELEGRAM_ID = config['telegram_id']
+
+if VERIFICA_BOT == 'S':
+	bot = telegram.Bot(token= config['telegram_token'])
 
 if API.check_connect():
 	print(' Conectado com sucesso!')
@@ -201,9 +203,8 @@ for x in sinais:
 	par = x.split(';')[1].upper()
 	minutos_lista = x.split(';')[2]
 	direcao = x.split(';')[3].lower().replace('\n','')
-
-	print('paridade a ser operada: ', par,'/', 'timeframe: ',timeframe,'/','horario: ',minutos_lista,'/','direcao: ',direcao)
-
+	mensagem_paridade = 'paridade a ser operada: ' + par + ' ' + '/' + ' ' + 'timeframe: ' + str(timeframe) + ' ' + '/' + ' ' + 'horario: ' + str(minutos_lista) + ' ' +  '/' + ' ' + 'direcao: ' + direcao
+	Mensagem(mensagem_paridade)
 	# print(par)
 	while True:
 		# payout = Payout(par,timeframe)
@@ -224,16 +225,19 @@ for x in sinais:
 		# print('Paridade',par)
 		
 		if entrar:
-			print('\n\nIniciando operação!')
+			Mensagem('\n\nIniciando Operacao')
 			dir = False
 			dir = direcao
 
 			if dir:
-				print('Paridade',par,'opcao:',opcao,'/','Horario:',minutos_lista,'/','Direção:',dir)
+				mensagem_operacao = 'Paridade: ' + par + ' ' + '/' + ' ' + 'opcao: ' + opcao  + ' ' + '/' + ' '  + 'Horario: ' + str(minutos_lista) + ' ' + '/' + ' ' + 'Direção: ' + dir
+				Mensagem(mensagem_operacao)
 				valor_entrada = valor_entrada_b
 				opcao = 'binaria' if (opcao == 60) else opcao
 				resultado,lucro,stop = entradas(par,valor_entrada, dir,config,opcao,timeframe)
-				print('   -> ',resultado,'/',lucro,'\n\n')
+				mensagem_resultado = '   ->  ' + resultado + ' / ' + str(lucro)
+				Mensagem(mensagem_resultado)
+				
 				if resultado == 'error':
 					break
 				
@@ -241,18 +245,22 @@ for x in sinais:
 					break
 
 				if stop:
-					print('\n\nStop',resultado.upper(),'batido!')
+					mensagem_stop = '\n\nStop '+ resultado.upper() + ' batido!'
+					Mensagem(mensagem_stop)
 					sys.exit()
 				
 				if resultado == 'loss' and config['martingale'] == 'S':
 					valor_entrada = Martingale(float(valor_entrada))
 					for i in range(int(config['niveis']) if int(config['niveis']) > 0 else 1):
 						
-						print('   MARTINGALE NIVEL '+str(i+1)+'..', end='')
+						mensagem_martingale= '   MARTINGALE NIVEL '+ str(i+1)+ '..'
+						Mensagem(mensagem_martingale)
 						resultado,lucro,stop = entradas(par, valor_entrada, dir,config,opcao,timeframe)
-						print(' ',resultado,'/',lucro,'\n')
+						mensagem_resultado_martingale = ' ' + resultado + ' / ' + str(lucro) + '\n'
+						Mensagem(mensagem_resultado_martingale)
 						if stop:
-							print('\n\nStop',resultado.upper(),'batido!')
+							mensagem_stop = '\n\nStop '+ resultado.upper() + ' batido!'
+							Mensagem(mensagem_stop)
 							sys.exit()
 						
 						if resultado == 'win':
@@ -265,5 +273,5 @@ for x in sinais:
 					break
 		time.sleep(0.1)
 	# break
-print('lista de sinais finalizada')
+Mensagem('lista de sinais finalizada')
 sys.exit()

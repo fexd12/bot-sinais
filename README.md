@@ -12,5 +12,11 @@ Os sinais deve ser inserido em sinais.txt <br>
 <br>
 Em configuração.txt colocar seu stop_win e stop_loss <br>
 <br> 
+Instalar as dependencias necessarias:<br>
+<p>pip install -r requirements.txt<p>
+<br>
 Para executar o robo: <br>
 <p> python main.py </p>
+<br>
+Adicionado bot para Telegram , em que envia mensagem do status de cada operação eo seu resultado.
+ler Bot_Telegram para poder usar a nova função

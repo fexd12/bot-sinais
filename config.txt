@@ -1,6 +1,11 @@
 [GERAL]
 stop_win = 30
 stop_loss = 15
-martingale = N
+martingale = S
 sorosgale = N
 niveis = 1
+
+[telegram]
+telegram_token = <seu token aqui>
+telegram_id = <id do grupo >
+usar_bot = N
