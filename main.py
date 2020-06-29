@@ -58,9 +58,9 @@ def carregaSinais():
 	x.close
 	return y
 
-def entradas(par, entrada, direcao,config,opcao):
+def entradas(par, entrada, direcao,config,opcao,timeframe):
 	if opcao == 'digital':
-		status,id = API.buy_digital_spot(par, entrada, direcao, 5)
+		status,id = API.buy_digital_spot(par, entrada, direcao, timeframe)
 		if status:
 			# STOP WIN/STP LOSS
 
@@ -89,7 +89,7 @@ def entradas(par, entrada, direcao,config,opcao):
 			return 'error',0,False
 
 	elif opcao == 'binaria':
-		status,id = API.buy(entrada,par,direcao,5)
+		status,id = API.buy(entrada,par,direcao,timeframe)
 		
 		if status:
 			lucro = API.check_win_v3(id)
@@ -125,12 +125,31 @@ def timestamp_converter():
 	
 	# return str(hora.astimezone(tz.gettz('America/Sao Paulo')))[:-6] if retorno == 1 else hora.astimezone(tz.gettz('America/Sao Paulo'))
 
+def Timeframe(timeframe):
+
+	if timeframe == 'M1':
+		return 1
+	
+	elif timeframe  == 'M5':
+		return 5
+
+	elif timeframe == 'M15':
+		return 15
+	
+	elif timeframe == 'H1':
+		return 60
+	else:
+		return 'erro'
+
 def checkProfit(par,timeframe):
 	all_asset =  API.get_all_open_time()
 	profit  = API.get_all_profit()
 
 	digital = 0
 	binaria = 0
+
+	if timeframe == 60:
+		return 'binaria'
 
 	if all_asset['digital'][par]['open']:
 		digital = Payout(par,timeframe)
@@ -169,7 +188,6 @@ else:
 valor_entrada = 1.8
 valor_entrada_b = float(valor_entrada)
 
-timeframe = 5
 lucro = 0
 
 sinais =  carregaSinais()
@@ -178,9 +196,14 @@ sinais =  carregaSinais()
 # while True:
 	# minutos = (((datetime.now()).strftime('%H:%M:%S'))[1:])
 for x in sinais:
+	timeframe_retorno = Timeframe(x.split(';')[0])
+	timeframe =  0 if (timeframe_retorno == 'error') else timeframe_retorno
 	par = x.split(';')[1].upper()
 	minutos_lista = x.split(';')[2]
 	direcao = x.split(';')[3].lower().replace('\n','')
+
+	print('paridade a ser operada: ', par,'/', 'timeframe: ',timeframe,'/','horario: ',minutos_lista,'/','direcao: ',direcao)
+
 	# print(par)
 	while True:
 		# payout = Payout(par,timeframe)
@@ -194,7 +217,7 @@ for x in sinais:
 		if minutos_lista < minutos:
 			break
 			
-		opcao = checkProfit(par,5)
+		opcao = checkProfit(par,timeframe)
 
 		entrar = True if (minutos_lista == minutos ) else False
 		# print('Hora de entrar?',entrar,'/ Minutos:',minutos)
@@ -208,7 +231,8 @@ for x in sinais:
 			if dir:
 				print('Paridade',par,'opcao:',opcao,'/','Horario:',minutos_lista,'/','Direção:',dir)
 				valor_entrada = valor_entrada_b
-				resultado,lucro,stop = entradas(par,valor_entrada, dir,config,opcao)
+				opcao = 'binaria' if (opcao == 60) else opcao
+				resultado,lucro,stop = entradas(par,valor_entrada, dir,config,opcao,timeframe)
 				print('   -> ',resultado,'/',lucro,'\n\n')
 				if resultado == 'error':
 					break
@@ -225,7 +249,7 @@ for x in sinais:
 					for i in range(int(config['niveis']) if int(config['niveis']) > 0 else 1):
 						
 						print('   MARTINGALE NIVEL '+str(i+1)+'..', end='')
-						resultado,lucro,stop = entradas(par, valor_entrada, dir,config,opcao)
+						resultado,lucro,stop = entradas(par, valor_entrada, dir,config,opcao,timeframe)
 						print(' ',resultado,'/',lucro,'\n')
 						if stop:
 							print('\n\nStop',resultado.upper(),'batido!')
