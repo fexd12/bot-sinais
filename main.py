@@ -1,11 +1,9 @@
-from iqoptionapi.stable_api import IQ_Option
-from datetime import datetime
-from dateutil import tz
+from utils import carregaSinais,configuracao,timestamp_converter
+from bot_telegram import Telegram
 
-import time, json, logging, configparser,sys,telegram
+import time, json, logging,sys
 
 logging.disable(level=(logging.DEBUG))
-
 
 def Martingale(valor):
 	lucro_esperado = float(valor) * 1.5 # gale para recuperacao = 1.5 , gale para cobertura = 2.3
@@ -30,22 +28,6 @@ def Payout(par,timeframe):
 
 def banca():
 	return API.get_balance()
-
-def configuracao():
-	arquivo = configparser.RawConfigParser()
-	arquivo.read('config.txt')	
-		
-	return {'stop_win': arquivo.get('GERAL', 'stop_win'),'stop_loss': arquivo.get('GERAL', 'stop_loss'), 'payout': 0, 'banca_inicial': banca(), 'martingale': arquivo.get('GERAL', 'martingale'), 'sorosgale': arquivo.get('GERAL', 'sorosgale'), 'niveis': arquivo.get('GERAL', 'niveis'),'telegram_token':arquivo.get('telegram','telegram_token'),'telegram_id':arquivo.get('telegram','telegram_id'),'usar_bot':arquivo.get('telegram','usar_bot')}
-
-def carregaSinais():
-	x = open('sinais.txt')
-	y=[]
-	for i in x.readlines():
-		# print(i)
-		y.append(i.replace(':00;',';'))
-	# print (y)
-	x.close
-	return y
 
 def entradas(par, entrada, direcao,config,opcao,timeframe):
 	if opcao == 'digital':
@@ -104,16 +86,6 @@ def entradas(par, entrada, direcao,config,opcao,timeframe):
 		return 'opcao errado',0,False
 
 
-def timestamp_converter():
-	hora = datetime.now()
-	tm = tz.gettz('America/Sao Paulo')
-	hora_atual = hora.astimezone(tm)
-	return hora_atual.strftime('%H:%M')
-	# hora = datetime.strptime(datetime.utcfromtimestamp(x).strftime('%H:%M:%S'), '%H:%M:%S')
-	# hora = hora.replace(tzinfo=tz.gettz('GMT'))
-	
-	# return str(hora.astimezone(tz.gettz('America/Sao Paulo')))[:-6] if retorno == 1 else hora.astimezone(tz.gettz('America/Sao Paulo'))
-
 def Timeframe(timeframe):
 
 	if timeframe == 'M1':
@@ -130,10 +102,6 @@ def Timeframe(timeframe):
 	else:
 		return 'erro'
 
-def Mensagem(mensagem):
-	print(mensagem)
-	if VERIFICA_BOT == 'S':
-		bot.sendMessage(chat_id = TELEGRAM_ID, text = mensagem)
 
 def checkProfit(par,timeframe):
 	all_asset =  API.get_all_open_time()
@@ -165,20 +133,24 @@ def checkProfit(par,timeframe):
 		"erro"
 
 
-API = IQ_Option('','')
+global VERIFICA_BOT
+
+config = configuracao()
+
+VERIFICA_BOT = config['usar_bot']
+
+# if VERIFICA_BOT == 'S':
+	# bot = Telegram(config['telegram_token'],config['telegram_id'])
+
+bot = Telegram(config['telegram_token'],config['telegram_id'],config['username'],config['password'])
+
+
+API = bot.loginAPI()
+
 API.connect()
 API.change_balance('PRACTICE') # PRACTICE / REAL
 
-global VERIFICA_BOT,TELEGRAM_ID
-
-config = configuracao()
 config['banca_inicial'] = banca()
-
-VERIFICA_BOT = config['usar_bot']
-TELEGRAM_ID = config['telegram_id']
-
-if VERIFICA_BOT == 'S':
-	bot = telegram.Bot(token= config['telegram_token'])
 
 if API.check_connect():
 	print(' Conectado com sucesso!')
@@ -204,7 +176,7 @@ for x in sinais:
 	minutos_lista = x.split(';')[2]
 	direcao = x.split(';')[3].lower().replace('\n','')
 	mensagem_paridade = 'paridade a ser operada: ' + par + ' ' + '/' + ' ' + 'timeframe: ' + str(timeframe) + ' ' + '/' + ' ' + 'horario: ' + str(minutos_lista) + ' ' +  '/' + ' ' + 'direcao: ' + direcao
-	Mensagem(mensagem_paridade)
+	bot.Mensagem(mensagem_paridade)
 	# print(par)
 	while True:
 		# payout = Payout(par,timeframe)
@@ -225,18 +197,18 @@ for x in sinais:
 		# print('Paridade',par)
 		
 		if entrar:
-			Mensagem('\n\nIniciando Operacao')
+			bot.Mensagem('\n\nIniciando Operacao')
 			dir = False
 			dir = direcao
 
 			if dir:
 				mensagem_operacao = 'Paridade: ' + par + ' ' + '/' + ' ' + 'opcao: ' + opcao  + ' ' + '/' + ' '  + 'Horario: ' + str(minutos_lista) + ' ' + '/' + ' ' + 'Direção: ' + dir
-				Mensagem(mensagem_operacao)
+				bot.Mensagem(mensagem_operacao)
 				valor_entrada = valor_entrada_b
 				opcao = 'binaria' if (opcao == 60) else opcao
 				resultado,lucro,stop = entradas(par,valor_entrada, dir,config,opcao,timeframe)
 				mensagem_resultado = '   ->  ' + resultado + ' / ' + str(lucro)
-				Mensagem(mensagem_resultado)
+				bot.Mensagem(mensagem_resultado)
 				
 				if resultado == 'error':
 					break
@@ -246,7 +218,7 @@ for x in sinais:
 
 				if stop:
 					mensagem_stop = '\n\nStop '+ resultado.upper() + ' batido!'
-					Mensagem(mensagem_stop)
+					bot.Mensagem(mensagem_stop)
 					sys.exit()
 				
 				if resultado == 'loss' and config['martingale'] == 'S':
@@ -254,13 +226,13 @@ for x in sinais:
 					for i in range(int(config['niveis']) if int(config['niveis']) > 0 else 1):
 						
 						mensagem_martingale= '   MARTINGALE NIVEL '+ str(i+1)+ '..'
-						Mensagem(mensagem_martingale)
+						bot.Mensagem(mensagem_martingale)
 						resultado,lucro,stop = entradas(par, valor_entrada, dir,config,opcao,timeframe)
 						mensagem_resultado_martingale = ' ' + resultado + ' / ' + str(lucro) + '\n'
-						Mensagem(mensagem_resultado_martingale)
+						bot.Mensagem(mensagem_resultado_martingale)
 						if stop:
 							mensagem_stop = '\n\nStop '+ resultado.upper() + ' batido!'
-							Mensagem(mensagem_stop)
+							bot.Mensagem(mensagem_stop)
 							sys.exit()
 						
 						if resultado == 'win':
@@ -273,5 +245,5 @@ for x in sinais:
 					break
 		time.sleep(0.1)
 	# break
-Mensagem('lista de sinais finalizada')
+bot.Mensagem('lista de sinais finalizada')
 sys.exit()
