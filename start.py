@@ -11,4 +11,4 @@ dispacher = updater.dispatcher
 bot.MonitoraBot(dispacher)
 print('Comandos do bot Iniciado.')
 updater.start_polling()
-updater.idle()
+# updater.idle()

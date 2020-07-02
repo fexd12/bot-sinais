@@ -19,4 +19,9 @@ Para executar o robo: <br>
 <p> python main.py </p>
 <br>
 Adicionado bot para Telegram , em que envia mensagem do status de cada operação eo seu resultado.
+
+# Iniciar bot
+
+Para seu bot comecar a realizar as operações, em um terminal de comando (CMD) basta digitar python ./main.py
+
 ler Bot_Telegram para poder usar a nova função

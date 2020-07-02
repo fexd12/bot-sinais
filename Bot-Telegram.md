@@ -15,6 +15,18 @@ Abaixo tutorial de como criar um bot no Telegram
 9. Instale a dependência: `pip install -r requirements.txt`
 10. Em config.txt,coloque seu token e ID do chat, obtido anteriormente
 
+# Comandos do Bot
+
+/start - mensagem de boas-vindas
+/banca - mostra sua banca atual
+/lucro - exibe seu lucro atual 
+
+# Iniciar Bot
+
+Para iniciar seu bot 
+
+em um terminal de comando (CMD) digitar python ./start.py
+
 Dúvidas? Leia https://github.com/python-telegram-bot/python-telegram-bot
 
 Lembre-se: não compartilhe seu token com ninguém, nem suba ele no GitHub, ou outras pessoas poderão usar seu bot!

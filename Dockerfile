@@ -5,6 +5,8 @@ WORKDIR /usr/src/app
 
 COPY . /usr/src/app
 
-RUN apt-get update && pip install -r requirements.txt && chmod +x shell.sh
+RUN apt-get update && pip install -r requirements.txt
 
-CMD ["./shell.sh"]
+CMD ["python","./main.py"]
+
+# ou python ./start.py
