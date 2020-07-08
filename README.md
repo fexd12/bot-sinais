@@ -19,4 +19,10 @@ Para executar o robo: <br>
 <p> python main.py </p>
 <br>
 Adicionado bot para Telegram , em que envia mensagem do status de cada operação eo seu resultado.
-ler Bot_Telegram para poder usar a nova função
+ler Bot_Telegram para poder usar a nova função.
+<br>
+Não me responsabilizo por delays e entradas atrasadas do bot.
+
+BOT em testes.
+
+"" Usar na conta demo !!""
