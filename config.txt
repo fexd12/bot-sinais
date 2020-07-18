@@ -1,13 +1,14 @@
 [GERAL]
-username = 
-password = 
+password = <email>
+email = <password>
 stop_win = 30
 stop_loss = 15
 martingale = S
 sorosgale = N
 niveis = 1
+valor_entrada = 1.8
 
 [telegram]
 telegram_token = <seu token aqui>
 telegram_id = <id do grupo >
-usar_bot = S
+usar_bot = false
