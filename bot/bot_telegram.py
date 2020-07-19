@@ -1,50 +1,35 @@
-import telegram
 from telegram import Bot
+from utils.utils import configuracao
+from iqoptionapi.stable_api import IQ_Option
+
+import time, sys, logging, telegram
 import telegram.ext as ext
 
-from iqoptionapi.stable_api import IQ_Option
-from utils import configuracao
+logging.disable(level=(logging.DEBUG))
 
-
-class ApiConnection(object):
-    _ApiConnection_instance = None
-    _ApiConnection_connection = None
-    _ApiConnection_connection: IQ_Option
-
-    @property
-    def connection(self):
-        return self._ApiConnection_connection
-
-    @connection.setter  
-    def connection(self,value):
-        self._ApiConnection_connection = value
-
-    @staticmethod
-    def instance():
-        if not ApiConnection._ApiConnection_instance:
-            ApiConnection._ApiConnection_instance = ApiConnection()
-        return ApiConnection._ApiConnection_instance
-
-class Telegram(Bot):
-
+class Main():
     def __init__(self):
-        self.config = configuracao()
-        self.token_id = self.config['telegram_token']
-        self.chat_id = self.config['telegram_id']
-        # self.username = self.config['email']
-        self.password = self.config['password']
-        self.usar_bot = bool(self.config['usar_bot'])
-        self.valor_entrada_b = float(self.config['valor_entrada'])
-        self.config['banca_inicial'] = self.banca()
-        self.balance = 'PRACTICE'
-        self.criaConexao()
-        Bot.__init__(self, self.token_id)
+        self.config                     = configuracao()
+        self.token_id                   = self.config['telegram_token']
+        self.chat_id                    = self.config['telegram_id']
+        self.username                   = self.config['email']
+        self.password                   = self.config['password']
+        self.bot                        = Bot(token=self.token_id)
+        self.usar_bot                   = bool(self.config['usar_bot'])
+        self.valor_entrada_b            = float(self.config['valor_entrada'])
+        self.balance                    = str(self.config['balance'])
+        self.API                        = IQ_Option(self.username,self.password)
+        self.conecta()
+        self.config['banca_inicial']    = self.banca()
+    
+    def conecta(self):
+        self.API.connect()
+        self.API.change_balance(self.balance)
 
-    def criaConexao(self):
-        apiConn = IQ_Option(self.username,self.password)
-        apiConn.connect()
-        apiConn.change_balance(self.balance)
-        ApiConnection.instance().connection = apiConn
+    def banca(self):
+        # self.conecta()
+        return self.API.get_balance()
+        # return 10
 
     def MonitoraBot(self, dispacher):
 
@@ -69,14 +54,12 @@ class Telegram(Bot):
     # def login(self):
     #     return self.bot
 
-    def Mensagem(self, mensagem, reply_markup=None):
+    def Mensagem(self, mensagem, reply_markup=None,print_msg=True):
         if self.usar_bot:
-            self.sendMessage(chat_id=self.chat_id,
+            self.bot.sendMessage(chat_id=self.chat_id,
                              text=mensagem, reply_markup=reply_markup)
-        print(mensagem)
-
-    def banca(self):
-        return ApiConnection.instance().connection.get_balance()
+        if print_msg:
+            print(mensagem)
 
     def Start(self, update, context):
         me = update.get_me()
@@ -98,13 +81,13 @@ class Telegram(Bot):
                                                        one_time_keyboard=True)
 
         # Send the message with menu
-        self.Mensagem(msg, reply_markup=reply_kb_markup)
+        self.Mensagem(msg, reply_markup=reply_kb_markup,print_msg=False)
         # update.sendMessage(chat_id=context.effective_chat.id,text=msg,reply_markup=reply_kb_markup)
 
     def BancaAtual(self, update, context):
         msg = "Sua Banca atual é de :" + str(self.banca())
 
-        self.Mensagem(msg)
+        self.Mensagem(msg,print_msg=False)
         # update.sendMessage(chat_id=context.effective_chat.id,text=msg)
 
     def Lucro(self, update, context):
@@ -113,4 +96,4 @@ class Telegram(Bot):
 
         msg = "Seu lucro atual é de: " + str(lucro)
 
-        self.Mensagem(msg)
+        self.Mensagem(msg,print_msg=False)

@@ -1,6 +1,7 @@
 [GERAL]
-password = <email>
-email = <password>
+email = <email>
+password = <senha> 
+balance = PRACTICE or REAL
 stop_win = 30
 stop_loss = 15
 martingale = S
@@ -10,5 +11,5 @@ valor_entrada = 1.8
 
 [telegram]
 telegram_token = <seu token aqui>
-telegram_id = <id do grupo >
+telegram_id = <id do grupo>
 usar_bot = false

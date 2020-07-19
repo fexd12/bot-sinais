@@ -1,15 +1,16 @@
-from bot_telegram import Telegram
-from utils import carregaSinais, timestamp_converter
-import time
-import sys
-import logging
+from bot.bot_telegram import Main
+from utils.utils import carregaSinais,timestamp_converter
+
+import time,sys,logging,utils
 
 logging.disable(level=(logging.DEBUG))
 
+class Operacao(Main):
+    # def __init__subclass(self):
+    #     Main.__init__(self)
 
-class Operacao(Telegram):
-    def __init__(self):
-        Telegram.__init__(self)
+    def __init__(self,):
+        Main.__init__(self)
 
     def Martingale(self, valor):
         # gale para recuperacao = 1.5 , gale para cobertura = 2.3
@@ -24,19 +25,19 @@ class Operacao(Telegram):
         return float(lucro_esperado)
 
     def Payout(self, par, timeframe):
-        self.subscribe_strike_list(par, timeframe)
+        self.API.subscribe_strike_list(par, timeframe)
         while True:
-            d = self.get_digital_current_profit(par, timeframe)
+            d = self.API.get_digital_current_profit(par, timeframe)
             if d > 0:
                 break
             time.sleep(1)
-        self.unsubscribe_strike_list(par, timeframe)
+        self.API.unsubscribe_strike_list(par, timeframe)
         return float(d / 100)
 
-    def entradas(self, par, entrada, direcao, config, opcao, timeframe):
+    def entradas(self, par, entrada, direcao,opcao, timeframe):
         banca = self.banca()
         if opcao == 'digital':
-            status, id = self.buy_digital_spot(
+            status, id = self.API.buy_digital_spot(
                 par, entrada, direcao, timeframe)
             if status:
                 # STOP WIN/STP LOSS
@@ -54,7 +55,7 @@ class Operacao(Telegram):
                     stop_win = True
 
                 while True:
-                    status, lucro = self.check_win_digital_v2(id)
+                    status, lucro = self.API.check_win_digital_v2(id)
 
                     if status:
                         if lucro > 0:
@@ -66,10 +67,10 @@ class Operacao(Telegram):
                 return 'error', 0, False
 
         elif opcao == 'binaria':
-            status, id = self.buy(entrada, par, direcao, timeframe)
+            status, id = self.API.buy(entrada, par, direcao, timeframe)
 
             if status:
-                lucro = self.check_win_v3(id)
+                lucro = self.API.check_win_v3(id)
 
                 banca_att = banca
                 stop_loss = False
@@ -108,8 +109,8 @@ class Operacao(Telegram):
             return 'erro'
 
     def checkProfit(self, par, timeframe):
-        all_asset = self.get_all_open_time()
-        profit = self.get_all_profit()
+        all_asset = self.API.get_all_open_time()
+        profit = self.API.get_all_profit()
 
         digital = 0
         binaria = 0
@@ -169,7 +170,7 @@ class Operacao(Telegram):
                 # print('Paridade',par)
 
                 if entrar:
-                    bot.Mensagem('\n\nIniciando Operacao')
+                    self.Mensagem('\n\nIniciando Operacao')
                     dir = False
                     dir = direcao
 
@@ -182,7 +183,7 @@ class Operacao(Telegram):
                         valor_entrada = self.valor_entrada_b
                         opcao = 'binaria' if (opcao == 60) else opcao
                         resultado, lucro, stop = self.entradas(
-                            par, valor_entrada, dir, config, opcao, timeframe)
+                            par, valor_entrada, dir, opcao, timeframe)
                         mensagem_resultado = '   ->  ' + \
                             resultado + ' / ' + str(lucro)
                         self.Mensagem(mensagem_resultado)
@@ -198,16 +199,16 @@ class Operacao(Telegram):
                             self.Mensagem(mensagem_stop)
                             sys.exit()
 
-                        if resultado == 'loss' and config['martingale'] == 'S':
+                        if resultado == 'loss' and self.config['martingale'] == 'S':
                             valor_entrada = self.Martingale(
                                 float(valor_entrada))
-                            for i in range(int(config['niveis']) if int(config['niveis']) > 0 else 1):
+                            for i in range(int(self.config['niveis']) if int(self.config['niveis']) > 0 else 1):
 
                                 mensagem_martingale = '   MARTINGALE NIVEL ' + \
                                     str(i+1) + '..'
                                 self.Mensagem(mensagem_martingale)
                                 resultado, lucro, stop = self.entradas(
-                                    par, valor_entrada, dir, config, opcao, timeframe)
+                                    par, valor_entrada, dir,opcao, timeframe)
                                 mensagem_resultado_martingale = ' ' + \
                                     resultado + ' / ' + str(lucro) + '\n'
                                 self.Mensagem(mensagem_resultado_martingale)

@@ -7,6 +7,4 @@ COPY . /usr/src/app
 
 RUN apt-get update && pip install -r requirements.txt
 
-CMD ["python","./main.py"]
-
-# ou python ./start.py
+CMD ["python","./__main__.py"]

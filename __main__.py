@@ -1,5 +1,6 @@
-from bot_telegram import Telegram as Operacao
+from operacao.services import Operacao
 from multiprocessing import Process
+import sys
 
 def botInicializa():
 	print('Iniciando Comandos ....')
@@ -16,18 +17,11 @@ def operacaoInicializa():
 
 bot = Operacao()
 
-bot.connect()
-bot.change_balance('PRACTICE') # PRACTICE / REAL
-
-
-if bot.check_connect():
+if bot.API.check_connect():
 	print(' Conectado com sucesso!')
 else:
 	print(' Erro ao conectar')
-	input('\n\n Aperte enter para sair')
 	sys.exit()
-
-
 
 if __name__ == "__main__":
 
