@@ -91,9 +91,8 @@ class Main():
         # update.sendMessage(chat_id=context.effective_chat.id,text=msg)
 
     def Lucro(self, update, context):
-        lucro = self.banca() - self.config['banca_inicial'] if self.banca(
-        ) - self.config['banca_inicial'] > 0 else '-' + str(self.banca() - self.config['banca_inicial'])
-
+        lucro = round(self.banca() - self.config['banca_inicial'],2) if self.banca(
+        ) - self.config['banca_inicial'] > 0 else '-' + str(round(self.banca() - self.config['banca_inicial'],2))
         msg = "Seu lucro atual é de: " + str(lucro)
 
         self.Mensagem(msg,print_msg=False)
